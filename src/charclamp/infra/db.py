@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncGenerator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -27,6 +27,15 @@ SyncSessionLocal = sessionmaker(sync_engine, expire_on_commit=False, class_=Sess
 
 def sync_create_all() -> None:
     Base.metadata.create_all(sync_engine)
+    # 旧快照库没有 (clamp_id, started_at) 唯一索引，幂等补上，
+    # 作为行锁之外的最终兜底：同窑夹缝时刻只许一笔入库。
+    with sync_engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_burn_shift_clamp_start "
+                "ON burn_shifts (clamp_id, started_at)"
+            )
+        )
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

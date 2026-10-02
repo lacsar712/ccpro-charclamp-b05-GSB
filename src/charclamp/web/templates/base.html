@@ -52,6 +52,41 @@
       document.getElementById('drawer-root').classList.remove('open');
       document.getElementById('drawer-backdrop').classList.remove('open');
     }
+
+    // 班次开始时间窗：抽屉即时校验与保存后拦截共用同一句中文。
+    function enforceShiftWindow(form) {
+      var input = form.querySelector('[data-window-input]');
+      var message = form.getAttribute('data-window-message');
+      if (!input) return true;
+      if (!input.value) { input.setCustomValidity(''); return true; }
+      if (input.validity.rangeUnderflow || input.validity.rangeOverflow) {
+        input.setCustomValidity(message);
+        return false;
+      }
+      input.setCustomValidity('');
+      return true;
+    }
+    document.addEventListener('input', function (evt) {
+      var input = evt.target.closest && evt.target.closest('[data-window-input]');
+      if (input) enforceShiftWindow(input.closest('[data-shift-window-form]'));
+    });
+    document.addEventListener('change', function (evt) {
+      var select = evt.target.closest && evt.target.closest('[data-clamp-min]');
+      if (!select) return;
+      var form = select.closest('[data-shift-window-form]');
+      var input = form.querySelector('[data-window-input]');
+      var mins = JSON.parse(select.getAttribute('data-clamp-min') || '{}');
+      var bound = mins[select.value];
+      if (bound) { input.setAttribute('min', bound); } else { input.removeAttribute('min'); }
+      enforceShiftWindow(form);
+    });
+    document.addEventListener('submit', function (evt) {
+      var form = evt.target.closest && evt.target.closest('[data-shift-window-form]');
+      if (form && !enforceShiftWindow(form)) {
+        evt.preventDefault();
+        form.querySelector('[data-window-input]').reportValidity();
+      }
+    }, true);
   </script>
 </body>
 </html>
