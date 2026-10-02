@@ -34,6 +34,7 @@ def seed_demo() -> None:
         session.flush()
 
         c1 = Clamp(site=site, code="坞东-甲", status=Clamp.STATUS_BURNING, wood_species="青冈")
+        # 已码窑且尚无班次：写第一班时应自动转入焖烧中。
         c2 = Clamp(site=site, code="坞东-乙", status=Clamp.STATUS_STACKED, wood_species="松木")
         c3 = Clamp(site=site, code="河沿-丙", status=Clamp.STATUS_DRAWN, wood_species="栎木")
         session.add_all([c1, c2, c3])
@@ -42,19 +43,20 @@ def seed_demo() -> None:
         now = utcnow()
         session.add_all(
             [
+                # 样例：坞东-甲 已有两班，新班次必须严格晚于最近一班。
                 BurnShift(
                     clamp=c1,
                     started_at=now - timedelta(hours=10),
+                    peak_temp_c=430.0,
+                    charcoal_grade="B",
+                    notes="首班起火，温度爬升",
+                ),
+                BurnShift(
+                    clamp=c1,
+                    started_at=now - timedelta(hours=6),
                     peak_temp_c=455.0,
                     charcoal_grade="A",
                     notes="峰值已过，可出炭",
-                ),
-                BurnShift(
-                    clamp=c2,
-                    started_at=now - timedelta(hours=3),
-                    peak_temp_c=None,
-                    charcoal_grade="B",
-                    notes="刚点火，未测峰值",
                 ),
                 BurnShift(
                     clamp=c3,

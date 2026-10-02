@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Index,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -58,6 +67,16 @@ class Clamp(Base):
 
 class BurnShift(Base):
     __tablename__ = "burn_shifts"
+    __table_args__ = (
+        # 同一炭窑同一开始时刻只许一笔：并发向同一夹缝时刻插班时由数据库兜底。
+        # 该唯一索引同时覆盖 (clamp_id) 与 (clamp_id, started_at) 的前缀查询。
+        Index(
+            "uq_burn_shift_clamp_started_at",
+            "clamp_id",
+            "started_at",
+            unique=True,
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     clamp_id: Mapped[int] = mapped_column(ForeignKey("clamps.id"), nullable=False)

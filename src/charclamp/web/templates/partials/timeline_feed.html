@@ -16,6 +16,13 @@
         <time datetime="{{ shift.started_at.isoformat() }}">
           {{ shift.started_at.strftime('%Y-%m-%d %H:%M') }}
         </time>
+        <button
+          type="button"
+          class="link-quiet shift-edit-btn"
+          hx-get="/drawer/shift/{{ shift.id }}"
+          hx-target="#drawer-root"
+          hx-swap="innerHTML"
+        >改写</button>
       </header>
       <div class="timeline-card-body">
         <div class="metric">

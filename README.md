@@ -36,9 +36,14 @@
 
 ## 业务规则
 
-炭窑状态不可设为「已出炭」（`drawn`），除非该窑**最近一条** `BurnShift` 的 `peakTempC` 已记录且 **≥ 400℃**。
+1. 炭窑状态不可设为「已出炭」（`drawn`），除非该窑**最近一条** `BurnShift` 的 `peakTempC` 已记录且 **≥ 400℃**。
+2. **班次开始时刻时间窗**（新建与改写共用同一套校验、同一句中文提示）：
+   - 开始时刻**不得晚于服务器当前时刻 10 分钟以上**；
+   - 也**不得早于该窑上一班开始时刻**——其后的每一班必须**严格晚于**上一班；
+   - 已码窑尚无班次时可写**第一班**，写入后窑自动转为「焖烧中」；
+   - 两人几乎同时向同一夹缝时刻插班时，靠窑行锁串行 + `(clamp_id, started_at)` 唯一索引兜底，**只许一笔入库**，另一笔以中文挡下。
 
-规则实现：`src/charclamp/domain/rules.py`
+规则实现：`src/charclamp/domain/rules.py`（`parse_started_at` / `validate_shift_window` / `predecessor_shift`）；并发与落库在 `src/charclamp/web/controllers.py`。
 
 ## 快速启动
 
